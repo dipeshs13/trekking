@@ -5,6 +5,8 @@
    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/23.0.10/css/intlTelInput.css" integrity="sha512..." crossorigin="anonymous" referrerpolicy="no-referrer" />
     @vite('resources/css/app.css')
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.22/dist/sweetalert2.min.css" integrity="sha256-YKKnn5oXErZthQwr01oz4mEVF11gcVMJYcmUuhoyUgM=" crossorigin="anonymous">
+    <!-- Alpine.js -->
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 </head>
 <body>
 
@@ -13,6 +15,10 @@
     <main>
         @yield('content')
     </main>
+
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.26.22/dist/sweetalert2.all.min.js" integrity="sha256-OPNtaJu+pOAMnTiPOFAHS6w5LLIlsOqOFtoLcHXbpug=" crossorigin="anonymous"></script>
+
+
+
 </body>
 </html>
