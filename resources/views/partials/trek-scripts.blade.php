@@ -185,86 +185,143 @@
             },
 
             async submitBooking() {
-    if (this.step !== 4) {
-        alert('Please complete all steps first.');
-        return;
-    }
+                if (this.step !== 4) {
+                    Swal.fire({
+                        title: 'Incomplete Steps',
+                        text: 'Please complete all steps before confirming your booking.',
+                        icon: 'info',
+                        confirmButtonColor: '#0d537c'
+                    });
+                    return;
+                }
 
-    // Build participants array dynamically from form
-    let participantsData = [];
-    for (let i = 1; i <= this.participants; i++) {
-        let fname = document.querySelector(`input[name="p${i}_fname"]`)?.value || '';
-        let lname = document.querySelector(`input[name="p${i}_lname"]`)?.value || '';
-        let email = document.querySelector(`input[name="p${i}_email"]`)?.value || '';
-        let whatsapp = document.querySelector(`input[name="p${i}_whatsapp"]`)?.value || '';
-        let notes = document.querySelector(`textarea[name="p${i}_notes"]`)?.value || '';
+                // Build participants array dynamically from form
+                let participantsData = [];
+                for (let i = 1; i <= this.participants; i++) {
+                    let fname = document.querySelector(`input[name="p${i}_fname"]`)?.value || '';
+                    let lname = document.querySelector(`input[name="p${i}_lname"]`)?.value || '';
+                    let email = document.querySelector(`input[name="p${i}_email"]`)?.value || '';
+                    let whatsapp = document.querySelector(`input[name="p${i}_whatsapp"]`)?.value || '';
+                    let notes = document.querySelector(`textarea[name="p${i}_notes"]`)?.value || '';
 
-        if (fname && lname && email) {
-            participantsData.push({
-                fname: fname.trim(),
-                lname: lname.trim(),
-                email: email.trim(),
-                whatsapp: whatsapp.trim(),
-                notes: notes.trim()
-            });
+                    if (fname && lname && email) {
+                        participantsData.push({
+                            fname: fname.trim(),
+                            lname: lname.trim(),
+                            email: email.trim(),
+                            whatsapp: whatsapp.trim(),
+                            notes: notes.trim()
+                        });
+                    }
+                }
+
+                if (participantsData.length === 0) {
+                    Swal.fire({
+                        title: 'Missing Information',
+                        text: 'Please fill in the required participant details.',
+                        icon: 'warning',
+                        confirmButtonColor: '#ff6600'
+                    });
+                    return;
+                }
+
+                // Show Loading Spinner immediately
+                Swal.fire({
+                    title: 'Processing Your Booking...',
+                    text: 'Please wait while we secure your trek.',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                const payload = {
+                    trek_title: this.trek.title,
+                    start_date: this.selectedStart ? this.selectedStart.toISOString().split('T')[0] : null,
+                    end_date: this.selectedEnd ? this.selectedEnd.toISOString().split('T')[0] : null,
+                    total_participants: this.participants,
+                    base_price: this.basePrice,
+                    total_price: this.totalPrice,
+                    total_amount: this.paymentOption === 'deposit' ? this.deposit : this.totalPrice,
+                    payment_method: this.paymentOption,
+                    include_insurance: this.includeInsurance,
+                    participants_data: participantsData,
+                    buyer_fname: this.buyer_fname,
+                    buyer_lname: this.buyer_lname,
+                    buyer_email: this.buyer_email
+                };
+
+                try {
+                    const response = await axios.post('{{ route("bookings.store") }}', payload, {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
+                        }
+                    });
+
+                    if (response.data.success) {
+                        // SUCCESS ALERT
+                        Swal.fire({
+                            title: 'Trek Booked Successfully!',
+                            text: 'Your adventure is confirmed.',
+                            icon: 'success',
+                            confirmButtonColor: '#0d537c',
+                            confirmButtonText: 'View My Bookings',
+                            background: '#f7f7f7',
+                            borderRadius: '15px'
+                        }).then((result) => {
+                            this.openForm = false;
+                            // Optional: Redirect to a dashboard or success page
+                            // window.location.href = '/dashboard';
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'Server Error',
+                            text: response.data.message || 'We could not save your booking. Please try again.',
+                            icon: 'error',
+                            confirmButtonColor: '#ff6600'
+                        });
+                    }
+                } catch (error) {
+                    console.error('Axios Full Error:', error);
+                    let errorMsg = 'Network error: Could not reach the server.';
+
+                    if (error.response && error.response.data.errors) {
+                        errorMsg = Object.values(error.response.data.errors).flat().join('\n');
+                    } else if (error.response && error.response.data.message) {
+                        errorMsg = error.response.data.message;
+                    }
+
+                    Swal.fire({
+                        title: 'Booking Failed',
+                        text: errorMsg,
+                        icon: 'error',
+                        confirmButtonColor: '#ff6600'
+                    });
+                }
+            },
+            showLoginAlert() {
+                Swal.fire({
+                    title: 'Explore the Peaks',
+                    text: "Please login first to book your trekking experience.",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#0d537c', // Your brand deep blue
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Login Now',
+                    cancelButtonText: 'Maybe Later',
+                    background: '#f7f7f7', // Your brand light gray
+                    borderRadius: '15px'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = "{{ route('login.form') }}";
+                    }
+                });
+            }
         }
-    }
-
-    if (participantsData.length === 0) {
-        alert('Please fill at least buyer information.');
-        return;
-    }
-
-    const payload = {
-        trek_title: this.trek.title,
-        start_date: this.selectedStart ? this.selectedStart.toISOString().split('T')[0] : null,
-        end_date: this.selectedEnd ? this.selectedEnd.toISOString().split('T')[0] : null,
-        total_participants: this.participants,
-        base_price: this.basePrice,
-        total_price: this.totalPrice,
-        total_amount: this.paymentOption === 'deposit' ? this.deposit : this.totalPrice,
-        payment_method: this.paymentOption,
-        include_insurance: this.includeInsurance,
-        participants_data: participantsData,
-        // Optional: add buyer info separately if needed
-        buyer_fname: this.buyer_fname,
-        buyer_lname: this.buyer_lname,
-        buyer_email: this.buyer_email
     };
 
-    try {
-        const response = await axios.post('{{ route("bookings.store") }}', payload, {
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
-            }
-        });
 
-        if (response.data.success) {
-            alert('Booking saved successfully! Booking ID: ' + response.data.booking_id);
-            this.openForm = false;
-            // Optional: redirect
-            // window.location.href = '/booking/success/' + response.data.booking_id;
-        } else {
-            alert('Server error: ' + (response.data.message || 'Unknown error'));
-        }
-    } catch (error) {
-        console.error('Axios Full Error:', error);
-        if (error.response) {
-            console.log('Server Response:', error.response.data);
-            if (error.response.data.errors) {
-                let msg = Object.values(error.response.data.errors).flat().join('\n');
-                alert('Validation failed:\n' + msg);
-            } else {
-                alert('Server error ' + error.response.status + ': ' + (error.response.data.message || 'Unknown'));
-            }
-        } else {
-            alert('Network error: Could not reach server.');
-        }
-    }
-}
-        };
-    }
 
     function trekList() {
         return {

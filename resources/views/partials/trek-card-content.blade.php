@@ -10,6 +10,7 @@
         From <span class="text-xl" x-text="trek.price"></span>
     </div>
 
+    @auth
     <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3">
         <button @click="openForm = true; step = 1"
             class="bg-[#ff6600] text-white px-8 py-2 rounded-full font-bold hover:bg-[#e65c00] transition">
@@ -20,6 +21,19 @@
             LEARN MORE
         </a>
     </div>
+@else
+    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3">
+        <button @click="showLoginAlert()"
+            class="bg-[#ff6600] text-white px-8 py-2 rounded-full font-bold hover:bg-[#e65c00] transition">
+            BOOK NOW
+        </button>
+        <a :href="trek.link"
+            class="bg-[#074b83] text-white px-8 py-2 rounded-full font-bold hover:bg-[#063a66] transition">
+            LEARN MORE
+        </a>
+    </div>
+@endauth
+    
 </div>
 
 <div class="p-5">
