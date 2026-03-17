@@ -11,9 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
+        Schema::table('bookings', function (Blueprint $table) {
             //
-            
+            $table->decimal('total_price', 10, 2)->nullable()->after('service_fee');
         });
     }
 
@@ -22,7 +22,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
+        Schema::table('bookings', function (Blueprint $table) {
             //
         });
     }

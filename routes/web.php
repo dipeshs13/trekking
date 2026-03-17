@@ -3,7 +3,7 @@
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 // use App\Http\Controllers\Auth\GoogleController;
-
+use App\Http\Controllers\BookingController;
 
 Route::get('/', function () {
     return view('index');
@@ -43,3 +43,6 @@ Route::get('/treks/{slug}', function($slug){
         'title' => str_replace('-', '', ucwords($slug))
     ]);
 })->name('treks.details');
+
+Route::post('/booking/confirm', [BookingController::class, 'store'])
+    ->name('bookings.store');
