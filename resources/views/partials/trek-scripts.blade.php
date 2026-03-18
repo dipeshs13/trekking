@@ -20,7 +20,9 @@
             buyer_fname: '',
             buyer_lname: '',
             buyer_email: '',
-
+            confirm_email: '', // Add this
+            participantDetails: [],
+            selectedDate: null, // Add this to track participant inputs
             countries: [
                 { name: 'Afghanistan', code: 'AF' },
                 { name: 'Albania', code: 'AL' },
@@ -78,13 +80,13 @@
                 return total;
             },
 
-            goToParticipantInfo() {
-                if (!this.selectedStart) {
-                    alert('Please select a departure date first.');
-                    return;
-                }
-                this.step = 2;
-            },
+            // goToParticipantInfo() {
+            //     if (!this.selectedStart) {
+            //         alert('Please select a departure date first.');
+            //         return;
+            //     }
+            //     this.step = 2;
+            // },
 
             currencyRates: {
                 'USD': { rate: 1, flag: 'us' },
@@ -317,6 +319,120 @@
                         window.location.href = "{{ route('login.form') }}";
                     }
                 });
+            },
+            goToParticipantInfo() {
+                if (!this.selectedStart) {
+                    Swal.fire({
+                        title: 'No Date Selected',
+                        text: 'Please select a departure date from the calendar to continue your booking.',
+                        icon: 'info',
+                        confirmButtonColor: '#0d537c', // Your brand deep blue
+                        background: '#f7f7f7'
+                    });
+                    return;
+                }
+                this.step = 2;
+            },
+            // Add an init or watcher to keep the array size synced with 'participants'
+            // ... inside your treksData function ...
+            init() {
+                // 1. Initialize the array immediately
+                this.syncParticipantArray(this.participants);
+
+                // 2. Watch for changes (if the user goes back to step 1 and changes pax count)
+                this.$watch('participants', (val) => this.syncParticipantArray(val));
+
+                // 3. Auto-fill the first participant with buyer info
+                this.$watch('buyer_fname', (val) => { if (this.participantDetails[0]) this.participantDetails[0].fname = val; });
+                this.$watch('buyer_lname', (val) => { if (this.participantDetails[0]) this.participantDetails[0].lname = val; });
+                this.$watch('buyer_email', (val) => { if (this.participantDetails[0]) this.participantDetails[0].email = val; });
+            },
+
+            syncParticipantArray(count) {
+                const num = parseInt(count);
+                // Add missing objects
+                while (this.participantDetails.length < num) {
+                    this.participantDetails.push({
+                        fname: '',
+                        lname: '',
+                        email: '',
+                        whatsapp: '',
+                        notes: ''
+                    });
+                }
+                // Remove extra objects if count decreased
+                this.participantDetails = this.participantDetails.slice(0, num);
+
+                // Ensure first participant matches buyer on sync
+                if (this.participantDetails.length > 0) {
+                    this.participantDetails[0].fname = this.buyer_fname;
+                    this.participantDetails[0].lname = this.buyer_lname;
+                    this.participantDetails[0].email = this.buyer_email;
+                }
+            },
+
+            // Inside your treksData() function
+            isValidEmail(email) {
+                return String(email)
+                    .toLowerCase()
+                    .match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
+            },
+
+            isNumeric(val) {
+                return /^\d+$/.test(val);
+            },
+            // Inside your treksData() function...
+            goToStep(targetStep) {
+                // 1. ALWAYS allow going backward (e.g., from 3 to 2)
+                if (targetStep < this.step) {
+                    this.step = targetStep;
+                    return;
+                }
+
+                // 2. Forward to Step 2: Must have a date selected
+                // Note: Changed from 'selectedDate' to 'selectedStart' to match your calendar
+                if (targetStep === 2 && !this.selectedStart) {
+                    Swal.fire({
+                        title: 'Date Required',
+                        text: 'Please select a departure date from the calendar first.',
+                        icon: 'warning',
+                        confirmButtonColor: '#074b83'
+                    });
+                    return;
+                }
+
+                // 3. Forward to Step 3 or 4: Must have valid participant info
+                if (targetStep > 2 && !this.isStep2Valid) {
+                    return;
+                }
+
+                this.step = targetStep;
+            },
+            // showError(msg) {
+            //     // You can use a simple alert or SweetAlert
+            //     Swal.fire({
+            //         title: 'Action Required',
+            //         text: msg,
+            //         icon: 'info',
+            //         confirmButtonColor: '#074b83'
+            //     });
+            // },
+            get isStep2Valid() {
+                // 1. Validate Buyer
+                const buyerOk = this.buyer_fname &&
+                    this.buyer_lname &&
+                    this.isValidEmail(this.buyer_email) &&
+                    (this.buyer_email === this.confirm_email);
+
+                // 2. Validate all Participants
+                const participantsOk = this.participantDetails.every(p =>
+                    p.fname.trim() !== '' &&
+                    p.lname.trim() !== '' &&
+                    this.isValidEmail(p.email) &&
+                    this.isNumeric(p.whatsapp)
+                );
+
+                return buyerOk && participantsOk;
             }
         }
     };
